@@ -1,0 +1,62 @@
+---
+title: "Kestrel Summary DM"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+??header
+
+str(Kestrel)
+collabs<- ARTEMIS_ALEX_TimeSeries_CMSC_205_Kestrel[3, ]
+Kestrel<-ARTEMIS_ALEX_TimeSeries_CMSC_205_Kestrel[5:45511, ]
+names(Kestrel)<- collabs
+head(Kestrel)
+write.csv(Kestrel, "Clean Kestrel.csv")
+
+
+```
+
+```{r}
+#group by date
+library(stringr)
+?group_by
+?summarise
+#ymd_hms(Kestrel$`FORMATTED DATE_TIME`)
+?lubridate::round_date
+?ymd_hms
+Kestrel$`FORMATTED DATE_TIME`<-str_sub(Kestrel$`FORMATTED DATE_TIME`, 1,(nchar(Kestrel$`FORMATTED DATE_TIME`)-3))
+head(Kestrel)
+str(Kestrel)
+for(k in 2:16){
+  Kestrel[,k]<-as.numeric(Kestrel[[,k]])
+}
+Kestrel$`Barometric Pressure`<- as.numeric(Kestrel$`Barometric Pressure`)
+Kestrel$`Density Altitude`<- as.numeric(Kestrel$`Density Altitude`)
+Kestrel$Headwind <- as.numeric(Kestrel$Headwind)
+Kestrel$`Direction - True` <- as.numeric(Kestrel$`Direction - True`)
+Kestrel$`Wind Speed`<- as.numeric(Kestrel$`Wind Speed`)
+Kestrel$`Wind Chill` <- as.numeric(Kestrel$`Wind Chill`)
+Kestrel$`Direction - Mag` <- as.numeric(Kestrel$`Direction - Mag`)
+Kestrel$`Station Pressure`<- as.numeric(Kestrel$`Station Pressure`)
+Kestrel$`Dew Point`<- as.numeric(Kestrel$`Dew Point`)
+Kestrel$Crosswind<- as.numeric(Kestrel$Crosswind)
+Kestrel$Altitude<- as.numeric(Kestrel$Altitude)
+Kestrel$`Relative Humidity`<- as.numeric(Kestrel$`Relative Humidity`)
+Kestrel$Temperature<- as.numeric(Kestrel$Temperature)
+Kestrel$`Psychro Wet Bulb Temperature`<- as.numeric(Kestrel$`Psychro Wet Bulb Temperature`)
+Kestrel$`Heat Stress Index`<-as.numeric(Kestrel$`Heat Stress Index`)
+ 
+str(Kestrel)
+
+head(Kestrel)
+new_kestrel<-group_by(Kestrel, `FORMATTED DATE_TIME`) %>% 
+summarize( "Barometric_Pressure" = mean(`Barometric Pressure`), "Density_Altitude" = mean(`Density Altitude`), "Headwind" = mean(Headwind), "DirectTrue" = mean(`Direction - True`), "WindSpeed" = mean(`Wind Speed`), "WindChill" = mean(`Wind Chill`), "DirectMag" = mean(`Direction - Mag`), "StatPress" = mean(`Station Pressure`), "DewPoint" = mean(`Dew Point`), "Crosswind" = mean(Crosswind), "Altitude" = mean(Altitude), "RelativeHum" = mean(`Relative Humidity`), "Temp" = mean(Temperature), "PsychroWetBulb" = mean(`Psychro Wet Bulb Temperature`), "HeatstressIndex" = mean(`Heat Stress Index`))
+
+new_kestrel
+write.csv(new_kestrel, "new_kestrel.csv")
+
+?write.csv
+```
+
