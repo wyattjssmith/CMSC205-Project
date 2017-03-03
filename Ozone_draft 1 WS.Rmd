@@ -1,0 +1,58 @@
+---
+title: "Project Draft 1"
+output: html_document
+---
+```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(lubridate)
+library(dplyr)
+ozone <- read.csv("~/CMSC205-Project/Clean Ozone.csv", as.is = TRUE, header = TRUE)
+nox <- read.csv("~/CMSC205-Project/Clean Ozone.csv", as.is = TRUE, header = TRUE)
+kestrel <- read.csv("~/CMSC205-Project/Clean Kestrel.csv", as.is = TRUE, header = TRUE)
+
+```
+
+
+```{r}
+# colnames(ozone) <- c("Log Number", "ppm", "Cell Temp", "Cell Pressure", "Flow Rate", "Date", "Time", "Garbage")
+# ozone1 <- ozone[-c(1:4),]
+# ozone1 <- select(ozone1, -Garbage)
+# ozone1$Date_Time = mdy_hms(paste(ozone1$Date, ozone1$Time))
+# #ozone1 <- mutate(ozone1, Interval_Date_Time = interval(ozone1$Date_Time - 00:00:05, ozone1$interval + 00:00:05))
+# 
+# head(ozone1)
+```
+
+
+
+```{r}
+ozone2 <- ozone[,-1]
+library(dplyr)
+library(lubridate)
+library(stringr)
+ozone2$Date_Time <- as.character(ozone2$Date_Time)
+ozone2$Date_Time<- str_sub(ozone2$Date_Time, 1, 16)
+ozone2_group <- group_by(ozone2, Date_Time)
+head(ozone2_group)
+
+#head(ozone2_group)
+ozone2_group$Log.Number <- as.numeric(ozone2_group$Log.Number)
+ozone2_group$ppm <- as.numeric(ozone2_group$ppm)
+ozone2_group$Cell.Temp <- as.numeric(ozone2_group$Cell.Temp)
+ozone2_group$Cell.Pressure <- as.numeric(ozone2_group$Cell.Pressure)
+ozone2_group$Flow.Rate <- as.numeric(ozone2_group$Flow.Rate)
+ozone2_group$Date <- as.numeric(ozone2_group$Date)
+ozone2_group$Time <- as.numeric(ozone2_group$Time)
+head(ozone2_group)
+```
+
+```{r}
+# Log.Number <- summarize(mean(ozone2_group$Log.Number), na.rm = TRUE)
+new_ozone <- ozone2_group %>%
+summarize('ozone_ppm' = mean(ppm), 'ozone_cell_temp' = mean(Cell.Temp),  'ozone_cell_pressure' = mean(Cell.Pressure), 'ozone_flow_rate' = mean(Flow.Rate), na.rm = TRUE)
+head(new_ozone)
+
+```
+
