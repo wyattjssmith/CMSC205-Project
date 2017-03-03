@@ -1,0 +1,74 @@
+---
+title: "CMSC 205 Final"
+author: "Linder Wendt"
+date: "2/21/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+library(stringr)
+```
+Reading the csv files in.
+```{r}
+nt_ozone <- read.csv(file.choose())
+nox <- read.csv("https://raw.githubusercontent.com/wyattjssmith/CMSC205-Project/master/Clean_NOx.csv?token=AX51v7JuOjyABsVirJI_lRqJPtpyMmcvks5Ywf9hwA%3D%3D")
+clean_kestrel <- read.csv(file.choose())
+```
+Clean clean_kestral so that we consistently have one observation per minute.
+```{r}
+clean_kestrel %>%
+
+  group_by(FORMATTED.DATE_TIME)%>%
+  summarise(abpr = mean())
+
+    
+
+```
+
+Start cleaning nox
+```{r}
+#Already ran these once, running str_sub again will change Time slot again
+# nox$Time <- as.character(nox$Time)
+# nox$Time <- str_sub(nox$Time, 1, nchar(nox$Time) - 3)
+
+#Join together Date and Time
+#nox <- unite(nox, date_time, Date, Time, sep = " ")
+
+#Group by Date Time so values are averaged for each date/time
+
+group_by()
+
+#Make everything numeric!
+nox$X <- as.numeric(nox$X)
+nox$i.Model.405 <- as.numeric(nox$i.Model.405)
+nox$NO2 <- as.numeric(nox$NO2)
+nox$NO <- as.numeric(nox$NO)
+nox$NOx <- as.numeric(nox$NOx)
+nox$ZnO2 <- as.numeric(nox$ZnO2)
+nox$ZnO <- as.numeric(nox$ZnO)
+nox$Cf <- as.numeric(nox$Cf)
+nox$Cell.Temp <- as.numeric(nox$Cell.Temp)
+nox$Cell.Pressure <- as.numeric(nox$Cell.Pressure)
+nox$Overflow <- as.numeric(nox$Overflow)
+nox$Cell.Flow <- as.numeric(nox$Cell.Flow)
+nox$Ozone.Flow <- as.numeric(nox$Ozone.Flow)
+nox$PDVa <- as.numeric(nox$PDVa)
+nox$PDVb <- as.numeric(nox$PDVb)
+nox$PDVo3 <- as.numeric(nox$PDVo3)
+nox$Scrubber.Temp <- as.numeric(nox$Scrubber.Temp)
+#Don't do this!!!!!!!!!! nox$date_time <- as.numeric(nox$date_time)
+nox$Mode <- as.numeric(nox$Mode)
+
+new_nox<-nox%>%
+  group_by(date_time)%>%
+summarize('X' = mean(X), 'i.Model.405' = mean(i.Model.405), 'NO2' = mean(NO2), 'NO' = mean(NO), 'NOx' = mean(NOx), 'ZnO2' = mean(ZnO2), 'ZnO' = mean(ZnO), 'Cf' = mean(Cf), 'Cell.Temp' = mean(Cell.Temp), 'Cell.Pressure' = mean(Cell.Pressure), 'Overflow' = mean(Overflow), 'Cell.Flow' = mean(Cell.Flow), 'Ozone.Flow' = mean(Ozone.Flow), 'PDVa' = mean(PDVa), 'PDVb' = mean(PDVb), 'PDVo3' = mean(PDVo3), 'Scrubber.Temp' = mean(Scrubber.Temp), 'Mode' = mean(Mode))
+
+
+
+
+
+```
+
