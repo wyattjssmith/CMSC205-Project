@@ -1,0 +1,53 @@
+---
+title: "Ozone_cleaning_file"
+output: html_document
+---
+```{r}
+library(dplyr)
+library(lubridate)
+library(stringr)
+ozoneintfile <- read.csv("https://raw.githubusercontent.com/wyattjssmith/CMSC205-Project/master/ARTEMIS_ALEX_TimeSeries%20CMSC%20205%20Ozone%20sheet.csv?token=AXxYxWIMY2Ck-WeG2oxhi2glA1hhNERAks5YxHPGwA%3D%3D")
+```
+
+```{r}
+ozoneintfile <- ozoneintfile[-c(1:4), -8] #Remove first four rows with header information in them and last column with NAs
+
+colnames(ozoneintfile) <- c("ozone_log_num", "ozone_ppm", "ozone_cell_temp", "ozone_cell_pressure", "ozone_flow_rate", "date", "time")
+ozone2 <- unite(ozoneintfile, date_time, date, time, sep = " ")
+ozone2$date_time <- mdy_hms(ozone2$date_time)
+
+
+ozone2$ozone_log_num <- as.numeric(ozone2$ozone_log_num)
+ozone2$ozone_ppm <- as.numeric(ozone2$ozone_ppm)
+ozone2$ozone_cell_temp <- as.numeric(ozone2$ozone_cell_temp)
+ozone2$ozone_cell_pressure <- as.numeric(ozone2$ozone_cell_pressure)
+ozone2$ozone_flow_rate <- as.numeric(ozone2$ozone_flow_rate)
+
+#Parameterizing data to remove obvious outliers based on previous plotting and observations
+
+
+
+ozone2 <- filter(ozone2, ozone_ppm < 1000, ozone_ppm > -15)
+ozone2 <- filter(ozone2, ozone_flow_rate < 20000, ozone_flow_rate > 350)
+ozone2 <- filter(ozone2, ozone_cell_pressure < 670)
+
+# ggplot(ozone2, aes(y = ozone_cell_temp, x = date_time)) + geom_point()
+# ggplot(ozone2, aes(y = ozone_cell_pressure, x = date_time)) + geom_point()
+# ggplot(ozone2, aes(y = ozone_cell_pressure, x = date_time)) + geom_point() 
+#Did not feel comfortable filtering temp
+
+
+#Did filtering before grouping to not lose minutes of data
+
+ozone2$date_time <- as.character(ozone2$date_time)
+ozone2$date_time<- str_sub(ozone2$date_time, 1, nchar(ozone2$date_time) -3)
+ozone2_group <- group_by(ozone2, date_time)
+
+
+```
+
+```{r}
+avg_ozone <- ozone2_group %>%
+  summarize("ozone_log_num" = mean(ozone_log_num), 'ozone_ppm' = mean(ozone_ppm), 'ozone_cell_temp' = mean(ozone_cell_temp),  'ozone_cell_pressure' = mean(ozone_cell_pressure), 'ozone_flow_rate' = mean(ozone_flow_rate))
+
+```
