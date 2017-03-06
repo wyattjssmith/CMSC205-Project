@@ -1,0 +1,174 @@
+---
+title: "Combined Cleaning and Joining File"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+library(lubridate)
+library(stringr)
+library(hexbin)
+
+```
+**Upload the CSV files for NOx, Ozone, and Kestrel data**
+```{r}
+#OZONE DATA
+ozoneintfile <- read.csv("https://raw.githubusercontent.com/wyattjssmith/CMSC205-Project/master/ARTEMIS_ALEX_TimeSeries%20CMSC%20205%20Ozone%20sheet.csv?token=AXxYxWIMY2Ck-WeG2oxhi2glA1hhNERAks5YxHPGwA%3D%3D")
+
+#KESTREL DATA
+Kestrelintfile <- read.csv("https://raw.githubusercontent.com/wyattjssmith/CMSC205-Project/master/ARTEMIS_ALEX_TimeSeries%20CMSC%20205%20Kestrel.csv?token=AXxYxbbl5e_g0F3gqZoRQlHagFpo0tuzks5YxfP2wA%3D%3D", as.is = TRUE, header = TRUE)
+
+#NOx DATA
+raw_nox <- read.csv("https://raw.githubusercontent.com/wyattjssmith/CMSC205-Project/master/Clean_NOx.csv?token=AX51v2i8LsGZFEkRiUAxoVxeA7GFQicpks5YxeRPwA%3D%3D")
+```
+**Tidying Ozone Data**
+```{r}
+ozoneintfile <- ozoneintfile[-c(1:4), -8] #Remove first four rows with header information in them and last column with NAs
+
+colnames(ozoneintfile) <- c("ozone_log_num", "ozone_ppm", "ozone_cell_temp", "ozone_cell_pressure", "ozone_flow_rate", "date", "time")
+ozone2 <- unite(ozoneintfile, date_time, date, time, sep = " ")
+
+
+
+ozone2$ozone_log_num <- as.numeric(ozone2$ozone_log_num)
+ozone2$ozone_ppm <- as.numeric(ozone2$ozone_ppm)
+ozone2$ozone_cell_temp <- as.numeric(ozone2$ozone_cell_temp)
+ozone2$ozone_cell_pressure <- as.numeric(ozone2$ozone_cell_pressure)
+ozone2$ozone_flow_rate <- as.numeric(ozone2$ozone_flow_rate)
+
+#Parameterizing data to remove obvious outliers based on previous plotting and observations
+
+
+
+ozone2 <- filter(ozone2, ozone_ppm < 1000, ozone_ppm > -15)
+ozone2 <- filter(ozone2, ozone_flow_rate < 20000, ozone_flow_rate > 350)
+ozone2 <- filter(ozone2, ozone_cell_pressure < 670)
+
+# ggplot(ozone2, aes(y = ozone_cell_temp, x = date_time)) + geom_point()
+# ggplot(ozone2, aes(y = ozone_cell_pressure, x = date_time)) + geom_point()
+# ggplot(ozone2, aes(y = ozone_cell_pressure, x = date_time)) + geom_point() 
+#Did not feel comfortable filtering temp
+
+
+#Did filtering before grouping to not lose minutes of data
+
+ozone2$date_time <- as.character(ozone2$date_time)
+ozone2$date_time<- str_sub(ozone2$date_time, 1, nchar(ozone2$date_time) -3)
+ozone2_group <- group_by(ozone2, date_time)
+```
+**Grouping Ozone Data and averaging to the minute**
+```{r}
+avg_ozone <- ozone2_group %>%
+  summarize("ozone_log_num" = mean(ozone_log_num), 'ozone_ppm' = mean(ozone_ppm), 'ozone_cell_temp' = mean(ozone_cell_temp),  'ozone_cell_pressure' = mean(ozone_cell_pressure), 'ozone_flow_rate' = mean(ozone_flow_rate))
+
+avg_ozone$date_time <- mdy_hm(avg_ozone$date_time)
+
+```
+
+**Tidying NOx Data**
+```{r}
+#Already ran these once, running str_sub again will change Time slot again
+raw_nox$Time <- as.character(raw_nox$Time)
+raw_nox$Time <- str_sub(raw_nox$Time, 1, nchar(raw_nox$Time) - 3)
+
+#Join together Date and Time
+raw_nox <- unite(raw_nox, date_time, Date, Time, sep = " ")
+
+#Make date_time a date
+raw_nox$date_time <- mdy_hm(raw_nox$date_time)
+
+#Other stuff imported from original doc
+nox <- raw_nox
+
+#Make everything numeric!
+nox$X <- as.numeric(nox$X)
+nox$i.Model.405 <- as.numeric(nox$i.Model.405)
+nox$NO2 <- as.numeric(nox$NO2)
+nox$NO <- as.numeric(nox$NO)
+nox$NOx <- as.numeric(nox$NOx)
+nox$ZnO2 <- as.numeric(nox$ZnO2)
+nox$ZnO <- as.numeric(nox$ZnO)
+nox$Cf <- as.numeric(nox$Cf)
+nox$Cell.Temp <- as.numeric(nox$Cell.Temp)
+nox$Cell.Pressure <- as.numeric(nox$Cell.Pressure)
+nox$Overflow <- as.numeric(nox$Overflow)
+nox$Cell.Flow <- as.numeric(nox$Cell.Flow)
+nox$Ozone.Flow <- as.numeric(nox$Ozone.Flow)
+nox$PDVa <- as.numeric(nox$PDVa)
+nox$PDVb <- as.numeric(nox$PDVb)
+nox$PDVo3 <- as.numeric(nox$PDVo3)
+nox$Scrubber.Temp <- as.numeric(nox$Scrubber.Temp)
+#Don't do this!!!!!!!!!! nox$date_time <- as.numeric(nox$date_time)
+nox$Mode <- as.numeric(nox$Mode)
+#Parameterizing NOx data to reomve outliers
+raw_nox <- filter(raw_nox, raw_nox$Cell.Pressure > 700)
+raw_nox <- filter(raw_nox, raw_nox$NO2 < 4000)
+raw_nox <- filter(raw_nox, raw_nox$Cell.Flow > 1675)
+
+#Group each data set into minutes and call it new_nox
+new_nox<-nox%>%
+  group_by(date_time)%>%
+summarize('X' = mean(X), 'i.Model.405' = mean(i.Model.405), 'NO2' = mean(NO2), 'NO' = mean(NO), 'NOx' = mean(NOx), 'ZnO2' = mean(ZnO2), 'ZnO' = mean(ZnO), 'Cf' = mean(Cf), 'nox_cell_temp' = mean(Cell.Temp), 'Cell.Pressure' = mean(Cell.Pressure), 'Overflow' = mean(Overflow), 'nox_cell_flow' = mean(Cell.Flow), 'ozone_flow' = mean(Ozone.Flow), 'PDVa' = mean(PDVa), 'PDVb' = mean(PDVb), 'PDVo3' = mean(PDVo3), 'scrubber_temp' = mean(Scrubber.Temp), 'Mode' = mean(Mode))
+```
+
+**Plots used to set parameters for NOx**
+```{r}
+# raw_nox%>%
+#   ggplot(aes(x = date_time, y = Cell.Flow)) + geom_point(color = 'purple')
+# 
+# raw_nox%>%
+#   ggplot(aes(x = date_time, y = Cell.Pressure)) + geom_point(color = 'purple')
+# 
+# raw_nox%>%
+#   ggplot(aes(x = date_time, y = NO2)) + geom_point(color = 'purple')
+```
+
+**Joinging NOx and Ozone**
+```{r}
+nox_ozone <- inner_join(x = avg_ozone, y = new_nox, by = "date_time")
+
+```
+
+**Tidying Kestrel Data**
+```{r}
+
+collabs<- Kestrelintfile[3, ]
+Kestrel<-Kestrelintfile[5:45511, ]
+names(Kestrel)<- collabs
+Kestrel$`FORMATTED DATE_TIME` <- as.character(Kestrel$`FORMATTED DATE_TIME`)
+Kestrel$`FORMATTED DATE_TIME`<-str_sub(Kestrel$`FORMATTED DATE_TIME`, 1,(nchar(Kestrel$`FORMATTED DATE_TIME`)-3))
+
+
+Kestrel$`Barometric Pressure`<- as.numeric(Kestrel$`Barometric Pressure`)
+Kestrel$`Density Altitude`<- as.numeric(Kestrel$`Density Altitude`)
+Kestrel$Headwind <- as.numeric(Kestrel$Headwind)
+Kestrel$`Direction - True` <- as.numeric(Kestrel$`Direction - True`)
+Kestrel$`Wind Speed`<- as.numeric(Kestrel$`Wind Speed`)
+Kestrel$`Wind Chill` <- as.numeric(Kestrel$`Wind Chill`)
+Kestrel$`Direction - Mag` <- as.numeric(Kestrel$`Direction - Mag`)
+Kestrel$`Station Pressure`<- as.numeric(Kestrel$`Station Pressure`)
+Kestrel$`Dew Point`<- as.numeric(Kestrel$`Dew Point`)
+Kestrel$Crosswind<- as.numeric(Kestrel$Crosswind)
+Kestrel$Altitude<- as.numeric(Kestrel$Altitude)
+Kestrel$`Relative Humidity`<- as.numeric(Kestrel$`Relative Humidity`)
+Kestrel$Temperature<- as.numeric(Kestrel$Temperature)
+Kestrel$`Psychro Wet Bulb Temperature`<- as.numeric(Kestrel$`Psychro Wet Bulb Temperature`)
+Kestrel$`Heat Stress Index`<-as.numeric(Kestrel$`Heat Stress Index`)
+
+colnames(Kestrel)[1] <- "date_time"
+
+new_kestrel<-group_by(Kestrel, date_time) %>% 
+summarize( "barometric_pressure" = mean(`Barometric Pressure`), "density_altitude" = mean(`Density Altitude`), "headwind" = mean(Headwind), "directtrue" = mean(`Direction - True`), "windspeed" = mean(`Wind Speed`), "windchill" = mean(`Wind Chill`), "directmag" = mean(`Direction - Mag`), "statpress" = mean(`Station Pressure`), "dewpoint" = mean(`Dew Point`), "crosswind" = mean(Crosswind), "altitude" = mean(Altitude), "relativehum" = mean(`Relative Humidity`), "temp" = mean(Temperature), "psychrowetbulb" = mean(`Psychro Wet Bulb Temperature`), "heatstressindex" = mean(`Heat Stress Index`))
+
+new_kestrel$date_time <- mdy_hm(new_kestrel$date_time)
+```
+
+
+** Joining the data for Kestrel, Ozone, and NOx**
+```{r}
+ARTEMIS_data <- inner_join(x = new_kestrel, y = nox_ozone, by = "date_time") 
+colnames(ARTEMIS_data) <- c("Date Time", "Barometic Pressure (mb)", "Density Alititude (m)", "Headwind (m/s)", "Direction - True", "Wind Speed (m/s)", "Wind Chill (°C)", "Direction Magnitude", "Station Pressure (mb)", "Dew Point (°C)", "Cross Wind (m/s)", "Altitude (m)", "Relative Humidity (%)", "Temperature (°C)", "Psychro Wet Bulb Temperature (°C)", "Heat Stress Index (°C)", "Ozone Log Number", "Ozone Concentration (ppm)", "Ozone Cell Temperature (°C)", "Ozone Cell Pressure", "Ozone Flow Rate", "Garbage", "NOx Log Number", "NO2 Concentration (ppm)", "NO Concentration (ppm)", "NOx Concentration (ppm)", "ZnO2", "ZnO", "NOx Cf", "NOx Cell Temperature (°C)", "NOx Cell Pressure","NOx Overflow", "NOx Cell Flow", "Ozone Flow", "PDVa", "PDVb", "PDVo3", "Scrubber Temperature (°C)", "NOx Mode")
+
+# 
+# write.csv(ARTEMIS_data,"ARTEMIS_Test_Data.csv")
+```
