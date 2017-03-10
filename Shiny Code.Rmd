@@ -1,0 +1,73 @@
+---
+title: "Shiny"
+author: "Linder Wendt"
+date: "3/5/2017"
+output: html_document
+runtime: shiny
+---
+```{r, include = FALSE}
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(stringr)
+library(scales)
+library(shiny)
+```
+
+```{r, include=FALSE}
+#load in joined data set from github
+joined<- read.csv("https://raw.githubusercontent.com/wyattjssmith/CMSC205-Project/master/joined_data.csv?token=AX2uR4Fxh2zEW4G9jc4sp5JPqCAG1DmZks5YwwSawA%3D%3D")
+nox_ozone <- read.csv("https://raw.githubusercontent.com/wyattjssmith/CMSC205-Project/master/Joined%20NOx%20and%20Ozone%20file.csv?token=AX51vw3i0vr_GVrpbtGF4PBoDul1Wo9Aks5Yxf5nwA%3D%3D")
+head(joined)
+#get rid of x columns (not actual data)
+artemisdata<- joined[,c( -1,-7, -8, -9)]
+head(artemisdata)
+names(artemisdata)
+#make date an actual date
+nox_ozone$date_time <- ymd_hms(nox_ozone$date_time)
+str(nox_ozone)
+```
+
+```{r, echo = FALSE}
+#X and Y variables select, checkboxes for regression line and smoothing curve, boxcar averages output table with summary stats (min, max range, mean, median)
+inputPanel(
+  selectInput("X", label = "X Variable:",
+              choices = names(nox_ozone)),
+
+  selectInput("Y", label = "Y variable:",
+             choices = names(nox_ozone)),
+  checkboxInput("table_choice", label = "Print Statistics"),
+  checkboxInput("regline", label = "Show Regression Line")
+
+)
+
+
+
+renderPlot({
+  if(input$regline == TRUE){nox_ozone %>%
+    ggplot(aes_string(x = input$X, y = input$Y)) +
+    geom_point(alpha = .2) +
+    labs(title = paste(input$Y, "vs.", input$X), x = input$X, y = input$Y) +
+    geom_smooth(method = lm)
+  }else{
+  nox_ozone %>%
+    ggplot(aes_string(x = input$X, y = input$Y)) +
+    geom_point(alpha = .2) +
+    labs(title = paste(input$Y, "vs.", input$X), x = input$X, y = input$Y)
+}
+})
+#Yielding the results, should make conditional on checkbox
+renderText({
+  if(input$table_choice == TRUE){paste("Minimum: ", round(min(nox_ozone[,input$Y])), "Maximum: ", round(max(nox_ozone[,input$Y])), "Mean: ", round(mean(nox_ozone[,input$Y])), 
+        "Median: ", round(median(nox_ozone[,input$Y])), "Relative Standard Deviation: ", ((sd(nox_ozone[,input$Y]))/(mean(nox_ozone[,input$Y])))*100)
+  }
+})
+
+
+    
+
+
+  
+
+```
+
