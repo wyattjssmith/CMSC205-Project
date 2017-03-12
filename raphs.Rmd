@@ -1,0 +1,88 @@
+---
+title: "Graphs for presentation"
+output: html_document
+---
+
+
+
+```{r}
+ARTEMIS <- read.csv("https://raw.githubusercontent.com/wyattjssmith/CMSC205-Project/master/ARTEMIS_Final_Data.csv?token=AX51v0k6yB1ZtVXfO-bsXPPo28ot5fPFks5YzsqCwA%3D%3D")
+
+nox_ozone <- read.csv("https://raw.githubusercontent.com/wyattjssmith/CMSC205-Project/master/Joined%20NOx%20and%20Ozone%20file.csv?token=AXxYxfx6N1YBmB7XFl5-AYvTB3DkbE_Tks5Yye2dwA%3D%3D")
+```
+
+```{r}
+library(lubridate)
+library(tidyverse)
+
+
+
+
+nox_ozone1 <- nox_ozone
+str(nox_ozone1$date_time)
+nox_ozone1$date_time <- ymd_hms(nox_ozone1$date_time)
+
+ggplot(nox_ozone1, aes(y = NO2, x = date_time)) + geom_point(color = "navy") + labs(title = "NO2 Concentration Over Month", y = "NO2 Concentration  (ppm)", x = "Date") + theme_gray()
+
+nox_ozone2 <- filter(nox_ozone1, NO2 > 20)
+
+
+ggplot(nox_ozone2, aes(y = NO2, x = date_time)) + geom_point(color = "navy") + labs(title = "NO2 Concentration Over Month", y = "NO2 Concentration  (ppm)", x = "Date") + theme_gray()
+
+
+nox11 <- filter(nox_ozone2, date_time > "2016-11-11 00:00:00", date_time < "2016-11-12 00:00:00")
+
+GridA<- ggplot(nox11, aes(y = NO2, x = date_time)) + geom_point(color = "navy") + labs(title = "NO2 Concentration Over 11th", y = "NO2 Concentration  (ppm)", x = "Time") + theme_gray()
+
+
+nox_ozone3 <- filter(nox_ozone2, date_time > "2016-11-14 10:00:00", date_time < "2016-11-15 00:00:00" )
+
+GridB<- ggplot(nox_ozone3, aes(y = NO2, x = date_time)) + geom_point(color = "navy") + labs(title = "NO2 Concentration Over 14th", y = "NO2 Concentration  (ppm)", x = "Time") + theme_gray()
+
+
+
+nox17 <- filter(nox_ozone2, date_time > "2016-11-17 00:00:00", date_time < "2016-11-18 00:00:00")
+
+GridC <- ggplot(nox17, aes(y = NO2, x = date_time)) + geom_point(color = "navy") + labs(title = "NO2 Concentration Over 17th", y = "NO2 Concentration  (ppm)", x = "Time") + theme_gray()
+
+
+nox_ozone4 <- filter(nox_ozone2, date_time > "2016-11-21 00:00:00", date_time < "2016-11-22 00:00:00")
+
+GridD<- ggplot(nox_ozone4, aes(y = NO2, x = date_time)) + geom_point(color = "navy") + labs(title = "NO2 Concentration Over 21st", y = "NO2 Concentration  (ppm)", x = "Time") + theme_gray()
+
+library(gridExtra)
+
+grid.arrange(GridA, GridB, GridC, GridD)
+
+ARTEMIS1 <- select(ARTEMIS, -X)
+
+colnames(ARTEMIS1) <- c("Date Time", "Barometic Pressure (mb)", "Density Alititude (m)", "Headwind (m/s)", "Direction - True", "Wind Speed (m/s)", "Wind Chill (°C)", "Direction Magnitude", "Station Pressure (mb)", "Dew Point (°C)", "Cross Wind (m/s)", "Altitude (m)", "Relative Humidity (%)", "Temperature (°C)", "Psychro Wet Bulb Temperature (°C)", "Heat Stress Index (°C)", "Ozone Log Number", "Ozone Concentration (ppm)", "Ozone Cell Temperature (°C)", "Ozone Cell Pressure", "Ozone Flow Rate", "Garbage", "NOx Log Number", "NO2 Concentration (ppm)", "NO Concentration (ppm)", "NOx Concentration (ppm)", "ZnO2", "ZnO", "NOx Cf", "NOx Cell Temperature (°C)", "NOx Cell Pressure","NOx Overflow", "NOx Cell Flow", "Ozone Flow", "PDVa", "PDVb", "PDVo3", "Scrubber Temperature (°C)", "NOx Mode")
+
+ARTEMIS1$`Date Time` <- ymd_hms(ARTEMIS1$`Date Time`)
+
+
+ARTEMIS2 <- filter(ARTEMIS1, `NO2 Concentration (ppm)` > 20)
+ggplot(ARTEMIS2, aes( y = `NO2 Concentration (ppm)`, x = `Direction - True`)) + geom_point(color = "navy") + labs(title = "Wind Direction compared to NO2 Concentration", y = "NO2 Concentration  (ppm)", x = "Wind Direction") + theme_gray()
+
+
+ARTEMIS3 <- filter(ARTEMIS2, `Date Time` > "2016-11-11 00:00:00", `Date Time` < "2016-11-12 00:00:00")
+
+ARTEMISA <- ggplot(ARTEMIS3, aes( y = `NO2 Concentration (ppm)`, x = `Direction - True`)) + geom_point(color = "navy") + labs(title = "Wind Direction compared to NO2 Concentration on the 11th", y = "NO2 Concentration  (ppm)", x = "Wind Direction") + theme_gray()
+
+
+ARTEMIS4 <- filter(ARTEMIS2, `Date Time` > "2016-11-14 00:10:00", `Date Time` < "2016-11-15 00:00:00")
+
+ARTEMISB <- ggplot(ARTEMIS4, aes( y = `NO2 Concentration (ppm)`, x = `Direction - True`)) + geom_point(color = "navy") + labs(title = "Wind Direction compared to NO2 Concentration on the 14th", y = "NO2 Concentration  (ppm)", x = "Wind Direction") + theme_gray()
+
+ARTEMIS5 <- filter(ARTEMIS2, `Date Time` > "2016-11-17 00:10:00", `Date Time` < "2016-11-18 00:00:00")
+
+ARTEMISC <- ggplot(ARTEMIS5, aes( y = `NO2 Concentration (ppm)`, x = `Direction - True`)) + geom_point(color = "navy") + labs(title = "Wind Direction compared to NO2 Concentration on the 17th", y = "NO2 Concentration  (ppm)", x = "Wind Direction") + theme_gray()
+
+ARTEMIS6 <- filter(ARTEMIS2, `Date Time` > "2016-11-21 00:00:00", `Date Time` < "2016-11-22 00:00:00")
+
+ARTEMISD <- ggplot(ARTEMIS6, aes( y = `NO2 Concentration (ppm)`, x = `Direction - True`)) + geom_point(color = "navy") + labs(title = "Wind Direction compared to NO2 Concentration on the 21st", y = "NO2 Concentration  (ppm)", x = "Wind Direction") + theme_gray()
+
+grid.arrange(ARTEMISA, ARTEMISB, ARTEMISC, ARTEMISD)
+
+```
+
