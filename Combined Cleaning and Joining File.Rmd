@@ -8,15 +8,17 @@ library(dplyr)
 library(lubridate)
 library(stringr)
 library(hexbin)
+library(tidyr)
+library(tidyverse)
 
 ```
 **Upload the CSV files for NOx, Ozone, and Kestrel data**
 ```{r}
 #OZONE DATA
-ozoneintfile <- read.csv("https://raw.githubusercontent.com/wyattjssmith/CMSC205-Project/master/ARTEMIS_ALEX_TimeSeries%20CMSC%20205%20Ozone%20sheet.csv?token=AXxYxWIMY2Ck-WeG2oxhi2glA1hhNERAks5YxHPGwA%3D%3D")
+ozoneintfile <- read.csv("https://raw.githubusercontent.com/wyattjssmith/CMSC205-Project/master/ARTEMIS_ALEX_TimeSeries%20CMSC%20205%20Ozone%20sheet.csv?token=AXxYxYDTyOR5hgSSXsCaLx7AaEWcd_hdks5YzsUhwA%3D%3D")
 
 #KESTREL DATA
-Kestrelintfile <- read.csv("https://raw.githubusercontent.com/wyattjssmith/CMSC205-Project/master/ARTEMIS_ALEX_TimeSeries%20CMSC%20205%20Kestrel.csv?token=AXxYxbbl5e_g0F3gqZoRQlHagFpo0tuzks5YxfP2wA%3D%3D", as.is = TRUE, header = TRUE)
+Kestrelintfile <- read.csv("https://raw.githubusercontent.com/wyattjssmith/CMSC205-Project/master/ARTEMIS_ALEX_TimeSeries%20CMSC%20205%20Kestrel.csv?token=AXxYxVMVP0UBFC5fNOsx7TZVLaVxneyCks5YzDrSwA%3D%3D", as.is = TRUE, header = TRUE)
 
 #NOx DATA
 raw_nox <- read.csv("https://raw.githubusercontent.com/wyattjssmith/CMSC205-Project/master/Clean_NOx.csv?token=AX51v2i8LsGZFEkRiUAxoVxeA7GFQicpks5YxeRPwA%3D%3D")
@@ -28,6 +30,8 @@ ozoneintfile <- ozoneintfile[-c(1:4), -8] #Remove first four rows with header in
 colnames(ozoneintfile) <- c("ozone_log_num", "ozone_ppm", "ozone_cell_temp", "ozone_cell_pressure", "ozone_flow_rate", "date", "time")
 ozone2 <- unite(ozoneintfile, date_time, date, time, sep = " ")
 
+ozone2$date_time <- as.character(ozone2$date_time)
+ozone2$date_time<- str_sub(ozone2$date_time, 1, nchar(ozone2$date_time) -3)
 
 
 ozone2$ozone_log_num <- as.numeric(ozone2$ozone_log_num)
@@ -42,18 +46,15 @@ ozone2$ozone_flow_rate <- as.numeric(ozone2$ozone_flow_rate)
 
 ozone2 <- filter(ozone2, ozone_ppm < 1000, ozone_ppm > -15)
 ozone2 <- filter(ozone2, ozone_flow_rate < 20000, ozone_flow_rate > 350)
-ozone2 <- filter(ozone2, ozone_cell_pressure < 670)
+ozone2 <- filter(ozone2, ozone_cell_pressure < 600)
 
 # ggplot(ozone2, aes(y = ozone_cell_temp, x = date_time)) + geom_point()
 # ggplot(ozone2, aes(y = ozone_cell_pressure, x = date_time)) + geom_point()
-# ggplot(ozone2, aes(y = ozone_cell_pressure, x = date_time)) + geom_point() 
+# ggplot(ozone2, aes(y = ozone_cell_pressure, x = date_time)) + geom_point(color = "navy") + labs(title = "Ozone Cell Pressure Across the Month After Filtering", y = "Ozone Cell Pressure", x = "Date") + theme_gray()
 #Did not feel comfortable filtering temp
 
 
 #Did filtering before grouping to not lose minutes of data
-
-ozone2$date_time <- as.character(ozone2$date_time)
-ozone2$date_time<- str_sub(ozone2$date_time, 1, nchar(ozone2$date_time) -3)
 ozone2_group <- group_by(ozone2, date_time)
 ```
 **Grouping Ozone Data and averaging to the minute**
@@ -124,9 +125,11 @@ summarize('X' = mean(X), 'i.Model.405' = mean(i.Model.405), 'NO2' = mean(NO2), '
 ```
 
 **Joinging NOx and Ozone**
+**Remove commented out function and change to desired name to gain a joined csv**
 ```{r}
 nox_ozone <- inner_join(x = avg_ozone, y = new_nox, by = "date_time")
 
+# write.csv(nox_ozone, "Joined NOx and Ozone file.csv")
 ```
 
 **Tidying Kestrel Data**
@@ -135,40 +138,67 @@ nox_ozone <- inner_join(x = avg_ozone, y = new_nox, by = "date_time")
 collabs<- Kestrelintfile[3, ]
 Kestrel<-Kestrelintfile[5:45511, ]
 names(Kestrel)<- collabs
-Kestrel$`FORMATTED DATE_TIME` <- as.character(Kestrel$`FORMATTED DATE_TIME`)
-Kestrel$`FORMATTED DATE_TIME`<-str_sub(Kestrel$`FORMATTED DATE_TIME`, 1,(nchar(Kestrel$`FORMATTED DATE_TIME`)-3))
+b <- Kestrel[- c(1:21177),]
+preformat <- Kestrel[- c(21174:45511), ]
+preformat$`FORMATTED DATE_TIME` <- as.character(preformat$`FORMATTED DATE_TIME`)
+preformat$`FORMATTED DATE_TIME`<-str_sub(preformat$`FORMATTED DATE_TIME`, 1,(nchar(preformat$`FORMATTED DATE_TIME`)-3))
+
+b$`FORMATTED DATE_TIME` <- mdy_hm(b$`FORMATTED DATE_TIME`)
+preformat$`FORMATTED DATE_TIME` <- mdy_hm(preformat$`FORMATTED DATE_TIME`)
+
+Kestrelt<- rbind(b, preformat)
+Kestrelt$`FORMATTED DATE_TIME` <- ymd_hms(Kestrelt$`FORMATTED DATE_TIME`)
 
 
-Kestrel$`Barometric Pressure`<- as.numeric(Kestrel$`Barometric Pressure`)
-Kestrel$`Density Altitude`<- as.numeric(Kestrel$`Density Altitude`)
-Kestrel$Headwind <- as.numeric(Kestrel$Headwind)
-Kestrel$`Direction - True` <- as.numeric(Kestrel$`Direction - True`)
-Kestrel$`Wind Speed`<- as.numeric(Kestrel$`Wind Speed`)
-Kestrel$`Wind Chill` <- as.numeric(Kestrel$`Wind Chill`)
-Kestrel$`Direction - Mag` <- as.numeric(Kestrel$`Direction - Mag`)
-Kestrel$`Station Pressure`<- as.numeric(Kestrel$`Station Pressure`)
-Kestrel$`Dew Point`<- as.numeric(Kestrel$`Dew Point`)
-Kestrel$Crosswind<- as.numeric(Kestrel$Crosswind)
-Kestrel$Altitude<- as.numeric(Kestrel$Altitude)
-Kestrel$`Relative Humidity`<- as.numeric(Kestrel$`Relative Humidity`)
-Kestrel$Temperature<- as.numeric(Kestrel$Temperature)
-Kestrel$`Psychro Wet Bulb Temperature`<- as.numeric(Kestrel$`Psychro Wet Bulb Temperature`)
-Kestrel$`Heat Stress Index`<-as.numeric(Kestrel$`Heat Stress Index`)
+Kestrelt$`FORMATTED DATE_TIME` <- as.character(Kestrelt$`FORMATTED DATE_TIME`)
+Kestrelt$`FORMATTED DATE_TIME`<-str_sub(Kestrelt$`FORMATTED DATE_TIME`, 1,(nchar(Kestrelt$`FORMATTED DATE_TIME`)-3))
 
-colnames(Kestrel)[1] <- "date_time"
 
-new_kestrel<-group_by(Kestrel, date_time) %>% 
+
+Kestrelt$`Barometric Pressure`<- as.numeric(Kestrelt$`Barometric Pressure`)
+Kestrelt$`Density Altitude`<- as.numeric(Kestrelt$`Density Altitude`)
+Kestrelt$Headwind <- as.numeric(Kestrelt$Headwind)
+Kestrelt$`Direction - True` <- as.numeric(Kestrelt$`Direction - True`)
+Kestrelt$`Wind Speed`<- as.numeric(Kestrelt$`Wind Speed`)
+Kestrelt$`Wind Chill` <- as.numeric(Kestrelt$`Wind Chill`)
+Kestrelt$`Direction - Mag` <- as.numeric(Kestrelt$`Direction - Mag`)
+Kestrelt$`Station Pressure`<- as.numeric(Kestrelt$`Station Pressure`)
+Kestrelt$`Dew Point`<- as.numeric(Kestrelt$`Dew Point`)
+Kestrelt$Crosswind<- as.numeric(Kestrelt$Crosswind)
+Kestrelt$Altitude<- as.numeric(Kestrelt$Altitude)
+Kestrelt$`Relative Humidity`<- as.numeric(Kestrelt$`Relative Humidity`)
+Kestrelt$Temperature<- as.numeric(Kestrelt$Temperature)
+Kestrelt$`Psychro Wet Bulb Temperature`<- as.numeric(Kestrelt$`Psychro Wet Bulb Temperature`)
+Kestrelt$`Heat Stress Index`<-as.numeric(Kestrelt$`Heat Stress Index`)
+
+colnames(Kestrelt)[1] <- "date_time"
+
+
+new_kestrel<-group_by(Kestrelt, date_time) %>%
 summarize( "barometric_pressure" = mean(`Barometric Pressure`), "density_altitude" = mean(`Density Altitude`), "headwind" = mean(Headwind), "directtrue" = mean(`Direction - True`), "windspeed" = mean(`Wind Speed`), "windchill" = mean(`Wind Chill`), "directmag" = mean(`Direction - Mag`), "statpress" = mean(`Station Pressure`), "dewpoint" = mean(`Dew Point`), "crosswind" = mean(Crosswind), "altitude" = mean(Altitude), "relativehum" = mean(`Relative Humidity`), "temp" = mean(Temperature), "psychrowetbulb" = mean(`Psychro Wet Bulb Temperature`), "heatstressindex" = mean(`Heat Stress Index`))
 
-new_kestrel$date_time <- mdy_hm(new_kestrel$date_time)
+
+new_kestrel$date_time <- ymd_hm(new_kestrel$date_time)
 ```
 
 
 ** Joining the data for Kestrel, Ozone, and NOx**
+**Remove commented out function and change to desired name to gain a joined csv**
 ```{r}
-ARTEMIS_data <- inner_join(x = new_kestrel, y = nox_ozone, by = "date_time") 
-colnames(ARTEMIS_data) <- c("Date Time", "Barometic Pressure (mb)", "Density Alititude (m)", "Headwind (m/s)", "Direction - True", "Wind Speed (m/s)", "Wind Chill (°C)", "Direction Magnitude", "Station Pressure (mb)", "Dew Point (°C)", "Cross Wind (m/s)", "Altitude (m)", "Relative Humidity (%)", "Temperature (°C)", "Psychro Wet Bulb Temperature (°C)", "Heat Stress Index (°C)", "Ozone Log Number", "Ozone Concentration (ppm)", "Ozone Cell Temperature (°C)", "Ozone Cell Pressure", "Ozone Flow Rate", "Garbage", "NOx Log Number", "NO2 Concentration (ppm)", "NO Concentration (ppm)", "NOx Concentration (ppm)", "ZnO2", "ZnO", "NOx Cf", "NOx Cell Temperature (°C)", "NOx Cell Pressure","NOx Overflow", "NOx Cell Flow", "Ozone Flow", "PDVa", "PDVb", "PDVo3", "Scrubber Temperature (°C)", "NOx Mode")
+ARTEMIS_data <- inner_join(x = new_kestrel, y = nox_ozone, by = "date_time")
 
-# 
+
+
+colnames(ARTEMIS_data) <- c("Date Time", "Barometric Pressure (mb)", "Density Alititude (m)", "Headwind (m/s)", "Direction - True", "Wind Speed (m/s)", "Wind Chill (°C)", "Direction Magnitude", "Station Pressure (mb)", "Dew Point (°C)", "Cross Wind (m/s)", "Altitude (m)", "Relative Humidity (%)", "Temperature (°C)", "Psychro Wet Bulb Temperature (°C)", "Heat Stress Index (°C)", "Ozone Log Number", "Ozone Concentration (ppm)", "Ozone Cell Temperature (°C)", "Ozone Cell Pressure", "Ozone Flow Rate", "Garbage", "NOx Log Number", "NO2 Concentration (ppm)", "NO Concentration (ppm)", "NOx Concentration (ppm)", "ZnO2", "ZnO", "NOx Cf", "NOx Cell Temperature (°C)", "NOx Cell Pressure","NOx Overflow", "NOx Cell Flow", "Ozone Flow", "PDVa", "PDVb", "PDVo3", "Scrubber Temperature (°C)", "NOx Mode")
+
+
 # write.csv(ARTEMIS_data,"ARTEMIS_Test_Data.csv")
 ```
+**To Joing Additional Data**
+Make Sure the Data has a date_time column and is tidy (run it through the necessary chunk)
+```{r}
+#Additional_data <- inner_join(X, Y, by = "date_time")
+
+# Set X and Y as the necessary dataframes
+```
+
