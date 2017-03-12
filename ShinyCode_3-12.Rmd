@@ -33,7 +33,7 @@ inputPanel(
               choices = names(ultimatedata)),
 
   selectInput("Y", label = "Y variable:",
-             choices = names(ultimatedata[-1]), selected = names(ultimatedata[9])),
+             choices = names(ultimatedata[-1]), selected = names(ultimatedata[23])),
 
   radioButtons("line", label = "Show Trend Line", choices = c("None", "Smoothing", "Linear Regression")),
   dateRangeInput("DRI", label = 'Select Date Range', start = '2016-11-07', end = '2016-11-28', min = '2016-11-07', max = '2016-11-28'),
