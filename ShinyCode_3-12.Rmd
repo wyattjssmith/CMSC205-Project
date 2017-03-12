@@ -1,0 +1,81 @@
+---
+title: "Shiny"
+author: "Linder Wendt"
+date: "3/5/2017"
+output: html_document
+runtime: shiny
+---
+```{r, include = FALSE}
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(stringr)
+library(scales)
+library(shiny)
+
+```
+
+```{r, include=FALSE}
+#load in joined data set from github
+nox_ozone <- read.csv("https://raw.githubusercontent.com/wyattjssmith/CMSC205-Project/master/Joined%20NOx%20and%20Ozone%20file.csv?token=AX51vw3i0vr_GVrpbtGF4PBoDul1Wo9Aks5Yxf5nwA%3D%3D")
+#make date an actual date
+nox_ozone$date_time <- ymd_hms(nox_ozone$date_time)
+str(nox_ozone)
+nox_ozone<-nox_ozone[-1]
+```
+
+```{r, echo = FALSE}
+#X and Y variables select, checkboxes for regression line and smoothing curve, boxcar averages output table with summary stats (min, max range, mean, median)
+inputPanel(
+  selectInput("X", label = "X Variable:",
+              choices = names(nox_ozone)),
+
+  selectInput("Y", label = "Y variable:",
+             choices = names(nox_ozone[-1]), selected = names(nox_ozone[9])),
+  checkboxInput("table_choice", label = "Print Statistics"),
+  radioButtons("line", label = "Show Trend Line", choices = c("Smoothing", "Linear Regression", "None")),
+  dateRangeInput("DRI", label = 'Select Date Range', start = '2016-11-07', end = '2016-11-28', min = '2016-11-07', max = '2016-11-28'),
+  checkboxInput("filter_data", label = "Filter Data"),
+  numericInput("y_min", label = "Y Minimum", value = 0),
+  numericInput("y_max", label = "Y Maximum", value = 0)
+
+)
+
+date_nox <- reactive({
+  date_filter <- filter(nox_ozone, date_time >= input$DRI[1], date_time <= input$DRI[2])
+  if(input$filter_data == TRUE){filter(date_filter, input$Y >= input$y_min, input$Y <= input$y_max)}else{
+    date_filter
+  }
+})
+
+
+renderPlot({
+p<-    ggplot(date_nox(), aes_string(x = input$X, y = input$Y)) +
+    geom_point(alpha = .2) +
+    labs(title = paste(input$Y, "vs.", input$X), x = input$X, y = input$Y)
+      if(input$line == "Smoothing"){ p + geom_smooth()}
+       else if(input$line == "Linear Regression"){ p + geom_smooth(method = lm)
+      }else{p}
+    
+})
+#Yielding the results
+renderText({
+  if(input$table_choice == TRUE){paste("Minimum: ", round(min(date_nox()[,input$Y]), digits = 3))}})
+renderText({
+    if(input$table_choice == TRUE){paste("Maximum: ", round(max(date_nox()[,input$Y]), digits = 3))}})
+renderText({
+      if(input$table_choice == TRUE){paste("Mean: ", round(mean(date_nox()[,input$Y]), digits = 3))}})
+renderText({
+        if(input$table_choice == TRUE){paste("Median: ",
+                                             round(median(date_nox()[,input$Y]), digits = 3))}})
+renderText({
+          if(input$table_choice == TRUE){paste("Relative Standard Deviation: ", round(((sd(date_nox()[,input$Y]))/(mean(date_nox()[,input$Y])))*100, digits = 3))}
+  })
+
+
+    
+
+
+  
+
+```
