@@ -1,5 +1,5 @@
 ---
-title: "Artemis App"
+title: "ARTEMIS App"
 author: "Linder Wendt, Dani Millin, Wyatt Smith, Wes Hetcher"
 date: "3/14/2017"
 output: html_document
@@ -12,17 +12,18 @@ library(lubridate)
 library(stringr)
 library(scales)
 library(shiny)
+library(mgcv)
 
 ```
 
 ```{r, include=FALSE}
 #load in joined data set from github
-ultimatedata <- read.csv("ARTEMIS_Final_Data.csv")
+ultimatedata <- read.csv("ARTEMIS_Final_Data.csv", encoding = 'UTF-8', fileEncoding = 'ISO8859-1')
 #make date an actual date
 ultimatedata$Date.Time <- ymd_hms(ultimatedata$Date.Time)
 
 ultimatedata<-ultimatedata[-1]
-colnames(ultimatedata) <- c("Date_Time", "Barometic_Pressure_mb", "Density_Alititude_m", "Headwind_mps", "Direction_True", "Wind_Speed_mps", "WindChill_C", "Direction_Magnitude", "Station_Pressure_mb", "Dew_Point_C", "Cross_Wind_mps", "Altitude_m", "Relative_Humidity_percentage", "Temperature_C", "Psychro_Wet_Bulb_Temperature_C", "Heat_Stress_Index_C", "Ozone_Log_Number", "Ozone_Concentration_ppm", "Ozone_Cell_Temperature_C", "Ozone_Cell_Pressure", "Ozone_Flow_Rate", "Garbage", "NOx_Log_Number", "NO2_Concentration_ppm", "NO_Concentration_ppm", "NOx_Concentration_ppm", "ZnO2", "ZnO", "NOx_Cf", "NOx_Cell_Temperature_C", "NOx_Cell_Pressure","NOx_Overflow", "NOx_Cell_Flow", "Ozone_Flow", "PDVa", "PDVb", "PDVo3", "Scrubber_Temperature_C", "NOx_Mode")
+colnames(ultimatedata) <- c("Date_Time", "Barometic_Pressure_mb", "Density_Altitude_m", "Headwind_mps", "Direction_True", "Wind_Speed_mps", "WindChill_C", "Direction_Magnitude", "Station_Pressure_mb", "Dew_Point_C", "Cross_Wind_mps", "Altitude_m", "Relative_Humidity_percentage", "Temperature_C", "Psychro_Wet_Bulb_Temperature_C", "Heat_Stress_Index_C", "Ozone_Log_Number", "Ozone_Concentration_ppm", "Ozone_Cell_Temperature_C", "Ozone_Cell_Pressure", "Ozone_Flow_Rate", "Garbage", "NOx_Log_Number", "NO2_Concentration_ppm", "NO_Concentration_ppm", "NOx_Concentration_ppm", "ZnO2", "ZnO", "NOx_Cf", "NOx_Cell_Temperature_C", "NOx_Cell_Pressure","NOx_Overflow", "NOx_Cell_Flow", "Ozone_Flow", "PDVa", "PDVb", "PDVo3", "Scrubber_Temperature_C", "NOx_Mode")
 ultimatedata<-ultimatedata[, -22]
 ```
 
@@ -32,7 +33,7 @@ inputPanel(
   selectInput("X", label = "X Variable:",
               choices = names(ultimatedata)),
 
-  selectInput("Y", label = "Y variable:",
+  selectInput("Y", label = "Y Variable:",
              choices = names(ultimatedata[-1]), selected = names(ultimatedata[23])),
 
   radioButtons("line", label = "Show Trend Line", choices = c("None", "Smoothing", "Linear Regression")),
