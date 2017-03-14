@@ -1,0 +1,33 @@
+---
+title: "Untitled"
+author: "Wesley"
+date: "March 12, 2017"
+output: html_document
+---
+
+```{r message = FALSE}
+library(tidyverse) # all of our usual tools
+library(ggplot2)
+library(sp)
+library(maps)
+library(ggmap)     # for spatial viz.
+library(viridis)   # for color scales
+```
+
+```{r}
+latt <- 44.257005 
+long <- -88.389919
+# locale18 <- get_map(location = c(lat = latt, lon = long), zoom = 18, maptype = "satellite") 
+locale17 <- get_map(location = c(lat = latt, lon = long), zoom = 17, maptype = "satellite") 
+# locale16 <- get_map(location = c(lat = latt, lon = long), zoom = 16, maptype = "satellite")
+# locale15 <- get_map(location = c(lat = latt, lon = long), zoom = 15, maptype = "satellite")
+
+# v15 <- ggmap(locale15)
+# v16 <- ggmap(locale16)
+v17 <- ggmap(locale17)
+# v18 <- ggmap(locale18)
+
+# grid.arrange(v15, v16, v17, v18)
+v17
+```
+
